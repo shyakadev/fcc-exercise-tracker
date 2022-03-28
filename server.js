@@ -20,7 +20,7 @@ const exerciseSchema = new mongoose.Schema({
   username: String,
   description: String,
   duration: Number,
-  date: Date,
+  date: String,
   _id: String
 })
 const User = mongoose.model("User", userSchema);
@@ -49,8 +49,17 @@ app.get("/api/users", async function(req, res) {
   res.json(users)
 })
 app.post("/api/users/:_id/exercises", urlencodedParser, async function (req, res){
-  // TODO: create exercises on user's _id with form data <description,duration,date?||current_date>
-  // TODO: the returned response will be the user object with the exercise fields added
+  const userId = req.params._id
+  let date = new Date(req.body.date ? req.body.date : new Date()).toLocaleDateString("en-CA")
+  const exercise = new Exercise({
+    _id: userId,
+    description: req.body.description,
+    duration: req.body.duration,
+    date: date
+  })
+  const createExercise = await exercise.save()
+  const user = await User.findOne({_id: userId})
+  res.json({_id: userId, username: user.username, date: createExercise.date, duration: createExercise.duration, description: createExercise.description})
 })
 app.get("/api/users/:_id/logs", async function(req, res){
   // TODO: retrieve a full exercise log of any user, return user object with a count property representing the number of exercises that belong to that user

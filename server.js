@@ -32,7 +32,6 @@ app.get('/', (req, res) => {
   res.sendFile(__dirname + '/views/index.html')
 });
 app.post("/api/users", urlencodedParser, async function (req, res) {
-  // TODO: create a new user with form data username and the returned response will be an object with username and _id properties
   const user = new User({
     username: req.body.username
   })
@@ -40,7 +39,14 @@ app.post("/api/users", urlencodedParser, async function (req, res) {
   res.json({username: createdUser.username, _id: createdUser._id.toString()})
 })
 app.get("/api/users", async function(req, res) {
-  // TODO: Get a list of all users in an array form, each returned element should be an object literal containing a user's username and _id
+  const users = (await User.find()).map(user => {
+    return {
+      _id: user._id.toString(),
+      username: user.username,
+      __v: user.__v
+    }
+  })
+  res.json(users)
 })
 app.post("/api/users/:_id/exercises", urlencodedParser, async function (req, res){
   // TODO: create exercises on user's _id with form data <description,duration,date?||current_date>

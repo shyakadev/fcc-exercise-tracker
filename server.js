@@ -68,10 +68,6 @@ app.post("/api/users/:_id/exercises", urlencodedParser, async function (req, res
   res.json({username: addExercise.username, description: exercise.description, duration: exercise.duration, date: (new Date(exercise.date).toDateString()).toString(), _id: addExercise._id.toString()})
 })
 app.get("/api/users/:_id/logs", async function(req, res){
-  // TODO: retrieve a full exercise log of any user, return user object with a count property representing the number of exercises that belong to that user
-  // TODO: return a log array of all the exercises added, each item should have a description, duration, and date properties
-  // TODO: description should be string, duration should be a number, date should be a string using the dataString format of the Date API.
-  // TODO: add from, to and limit parameters to retrieve part of the log user. from and to are dates in yyyy-mm-dd format. limit is an integer of how many logs to send back
   const userId = req.params._id
   const exercises = await User.findOne({_id: userId}).populate('exercises')
   res.json({username: exercises.username, _id: exercises._id, logs: exercises.exercises.map((exercise)=>{

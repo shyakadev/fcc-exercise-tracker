@@ -1,0 +1,11 @@
+ 
+{
+    "version": 2,
+    "name": "fcc-exercise-tracker-projects",
+    "builds": [
+      { "src": "server.js", "use": "@vercel/node" }
+    ],
+    "routes": [
+      { "src": "/(.*)", "dest": "/server.js" }
+    ]
+  }

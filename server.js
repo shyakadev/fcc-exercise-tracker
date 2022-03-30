@@ -33,6 +33,7 @@ app.use(express.static(__dirname + "/public"));
 app.get("/", (req, res) => {
   res.sendFile(__dirname + "/views/index.html");
 });
+
 app.post("/api/users", urlencodedParser, async function (req, res) {
   const user = new User({
     _id: new mongoose.Types.ObjectId(),
@@ -41,6 +42,7 @@ app.post("/api/users", urlencodedParser, async function (req, res) {
   const createdUser = await user.save();
   res.json({ username: createdUser.username, _id: createdUser._id.toString() });
 });
+
 app.get("/api/users", async function (req, res) {
   const users = (await User.find()).map((user) => {
     return {
@@ -51,6 +53,7 @@ app.get("/api/users", async function (req, res) {
   });
   res.json(users);
 });
+
 app.post(
   "/api/users/:_id/exercises",
   urlencodedParser,
@@ -78,20 +81,30 @@ app.post(
     });
   }
 );
+
 app.get("/api/users/:_id/logs", async function (req, res) {
+  const { from, to, limit } = req.query;
   const userId = req.params._id;
-  const exercises = await User.findOne({ _id: userId }).populate("exercises");
-  res.json({
-    username: exercises.username,
-    count: exercises.exercises.length,
-    _id: exercises._id,
-    log: exercises.exercises.map((exercise) => {
+  User.findOne({ _id: userId }).exec(async (err, user) => {
+    const getExercises = await Exercise.find({ user: userId })
+      .where("date")
+      .gt(from)
+      .lt(to)
+      .limit(limit);
+    const exercises = getExercises.map((exercise) => {
       return {
         description: exercise.description,
         duration: exercise.duration,
         date: new Date(exercise.date).toDateString().toString(),
       };
-    }),
+    });
+
+    res.json({
+      username: user.username,
+      count: exercises.length,
+      _id: user._id,
+      log: exercises,
+    });
   });
 });
 

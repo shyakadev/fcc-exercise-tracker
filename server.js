@@ -28,6 +28,27 @@ const exerciseSchema = Schema({
 const User = mongoose.model("User", userSchema);
 const Exercise = mongoose.model("Exercise", exerciseSchema);
 
+const getUserExercises = async (userId, query) => {
+  const { from, to, limit } = query;
+  const exercises = await User.findOne({ _id: userId }).populate({
+    path: "exercises",
+    perDocumentLimit: limit,
+    match: { date: { $gte: from, $lte: to } },
+  });
+  return {
+    username: exercises.username,
+    count: exercises.exercises.length,
+    _id: exercises._id,
+    log: exercises.exercises.map((exercise) => {
+      return {
+        description: exercise.description,
+        duration: exercise.duration,
+        date: new Date(exercise.date).toDateString().toString(),
+      };
+    }),
+  };
+};
+
 app.use(cors());
 app.use(express.static(__dirname + "/public"));
 app.get("/", (req, res) => {
@@ -83,29 +104,16 @@ app.post(
 );
 
 app.get("/api/users/:_id/logs", async function (req, res) {
-  const { from, to, limit } = req.query;
+  const from = req.query.from
+    ? req.query.from
+    : new Date(0).toLocaleDateString("en-CA").toString();
+  const to = req.query.to
+    ? req.query.to
+    : new Date().toLocaleDateString("en-CA").toString();
+  const limit = req.query.limit ? req.query.limit : 10;
+  const query = { from: from, to: to, limit: limit };
   const userId = req.params._id;
-  User.findOne({ _id: userId }).exec(async (err, user) => {
-    const getExercises = await Exercise.find({ user: userId })
-      .where("date")
-      .gt(from)
-      .lt(to)
-      .limit(limit);
-    const exercises = getExercises.map((exercise) => {
-      return {
-        description: exercise.description,
-        duration: exercise.duration,
-        date: new Date(exercise.date).toDateString().toString(),
-      };
-    });
-
-    res.json({
-      username: user.username,
-      count: exercises.length,
-      _id: user._id,
-      log: exercises,
-    });
-  });
+  res.json(await getUserExercises(userId, query));
 });
 
 const listener = app.listen(process.env.PORT || 3000, () => {
